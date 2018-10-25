@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sample",
-    "description": "A very interesting project.",
+    "name": "JHProHealth Beta",
+    "description": "A companion app for JHProHealth.",
     "slug": "sample",
     "privacy": "public",
     "sdkVersion": "30.0.0",
@@ -22,6 +22,10 @@
     ],
     "ios": {
       "supportsTablet": true
+    },
+    "android": {
+      "package": "com.jhuinbt.jhprohealth",
+      "googleServicesFile": "./google-services.json",
     }
   }
 }

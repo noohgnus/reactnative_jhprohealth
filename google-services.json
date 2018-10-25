@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "381692434379",
+    "firebase_url": "https://jhprohealth-85eae.firebaseio.com",
+    "project_id": "jhprohealth-85eae",
+    "storage_bucket": "jhprohealth-85eae.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:381692434379:android:81b4fd614bc3926a",
+        "android_client_info": {
+          "package_name": "com.jhuinbt.jhprohealth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "381692434379-n9pdi8cv4inoqc5sosvrubbde7mvomla.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwwPbFhFX0Sld8M8eqfAIUnglmF9qBWHU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,5 @@
+"expo credentials": [
+  "galaxy s8": "ExponentPushToken[6SBD5GHv0S-ApNmCpU54PN]",
+  "iphone 6": "ExponentPushToken[ecoAvsGsp9lJ_EUNR2L8YH]"
+],
+"url": "https://expo.io/dashboard/notifications"

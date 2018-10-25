@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import {
   WebBrowser,
+  Permissions,
   Notifications,
  } from 'expo';
 
@@ -29,6 +30,8 @@ class PickedDateTime{
   }
 
 }
+
+
 
 export default class HomeScreen extends React.Component {
   static navigationOptions = {
@@ -134,15 +137,69 @@ export default class HomeScreen extends React.Component {
 
   }
 
+
+  async registerForPushNotificationsAsync() {
+    const PUSH_ENDPOINT = 'https://your-server.com/users/push-token';
+
+    const { status: existingStatus } = await Permissions.getAsync(
+      Permissions.NOTIFICATIONS
+    );
+    let finalStatus = existingStatus;
+
+    // only ask if permissions have not already been determined, because
+    // iOS won't necessarily prompt the user a second time.
+    if (existingStatus !== 'granted') {
+      // Android remote notification permissions are granted during the app
+      // install, so this will only ask on iOS
+      const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+      finalStatus = status;
+    }
+
+    // Stop here if the user did not grant permissions
+    if (finalStatus !== 'granted') {
+      console.log("push permission not granted.");
+      return;
+    } else {
+      console.log("push permission granted!");
+    }
+
+    // Get the token that uniquely identifies this device
+    let token = await Notifications.getExpoPushTokenAsync();
+    console.log(token);
+
+    // POST the token to your backend server from where you can retrieve it to send push notifications.
+    return fetch(PUSH_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: {
+          value: token,
+        },
+        user: {
+          username: 'Brent',
+        },
+      }),
+    });
+  }
+
   componentDidMount(){
     if (Platform.OS === 'android') {
+      console.log("OS: android. component did mount");
+      this.registerForPushNotificationsAsync();
       Expo.Notifications.createChannelAndroidAsync('reminders', {
         name: 'Reminders',
         priority: 'max',
         sound: true,
         vibrate: [0, 250, 250, 250],
       });
+    } else if(Platform.OS === 'ios'){    //TODO: iOS specific handling, but it seems to be working for now
+      console.log("OS: ios. component did mount");
+      this.registerForPushNotificationsAsync();
     }
+
   }
 
   _createNotificationAsync = () => {
@@ -170,7 +227,7 @@ export default class HomeScreen extends React.Component {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.myButton} onPress={() => this.submitDateTime()}>
-                <Text style={styles.buttonText}>Set reminder</Text>
+                <Text style={styles.buttonText}>Set rrrreminder</Text>
             </TouchableOpacity>
 
           </View>
