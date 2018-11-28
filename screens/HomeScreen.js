@@ -8,10 +8,17 @@ import {
   Picker,
   DatePickerAndroid,
   TimePickerAndroid,
+  DatePickerIOS,
+  TimePickerIOS,
   ToastAndroid,
   TouchableOpacity,
   View,
+  Clipboard,
+  TextInput,
 } from 'react-native';
+
+import DatePicker from 'react-native-datepicker'
+
 import {
   WebBrowser,
   Permissions,
@@ -35,16 +42,18 @@ class PickedDateTime{
 
 export default class HomeScreen extends React.Component {
   static navigationOptions = {
-    header: null,
+    title: "JHProHealth Companion App",
   };
 
 
 
   state = {
-    language: "English",
-    datetext: "Choose date",
-    timetext: "Choose time",
-
+    language: "",
+    userId: 0,
+    datetext: "",
+    timetext: "",
+    time: "00:00",
+    token: "",
   }
 
   async openCalendar() {
@@ -70,29 +79,79 @@ export default class HomeScreen extends React.Component {
   }
 
   async openTimePicker(){
-    try {
-      const {action, hour, minute} = await TimePickerAndroid.open({
-        hour: 17,
-        minute: 0,
-        is24Hour: false, // Will display '2 PM'
-      });
-      if (action !== TimePickerAndroid.dismissedAction) {
-        // Selected hour (0-23), minute (0-59)
-        ToastAndroid.show(`${hour} : ${minute}`, ToastAndroid.SHORT);
-        let timetext = `${hour}:${minute}`;
-        this.setState({
-          timetext: timetext
+    if (Platform.OS === 'android') {
+
+      try {
+        const {action, hour, minute} = await TimePickerAndroid.open({
+          hour: 12,
+          minute: 0,
+          is24Hour: false,
         });
+        if (action !== TimePickerAndroid.dismissedAction) {
+          // Selected hour (0-23), minute (0-59)
+          ToastAndroid.show(`${hour} : ${minute}`, ToastAndroid.SHORT);
+          if (minute % 10 == 0){
+            minute = minute + "0";
+          }
+          let timetext = `${hour}:${minute}`;
+          this.setState({
+            timetext: timetext
+          });
+        }
+      } catch ({code, message}) {
+        console.warn('Cannot open time picker', message);
       }
-    } catch ({code, message}) {
-      console.warn('Cannot open time picker', message);
+    } else if (Platform.OS === 'ios') {
+      console.log('hi ios');
+      return (
+        <DatePickerIOS
+          date={new Date()}
+          onDateChange={this.setDateIOS}
+        />
+      );
     }
+  }
+
+  setDateIOS(newDate) {
+    this.setState({datetext: newDate})
   }
 
   submitDateTime(){
     ToastAndroid.show(`${this.state.datetext} at ${this.state.timetext}`, ToastAndroid.SHORT);
     this._createNotificationAsync();
     this.sendDelayedNotificationV2(`It's time to take a survey!`,`Your nth survey is ready to take.`)
+  }
+
+  submitTime(){
+    fetch(`https://jhprohealth.herokuapp.com/polls/reminders/${this.state.userId}/${this.state.timetext}/${this.state.token}/`)
+    .then(
+      response => console.log(response)
+    ).catch(
+      error => console.log(error)
+    );
+
+  }
+  async submitTimeAsync() {
+    if(this.state.timetext == ""){
+      alert("Please select preferred time");
+      return;
+    }
+    if(this.state.userId == 0){
+      alert("Please enter userId");
+      return;
+    }
+    try {
+      alert('Please wait...');
+      let response = await fetch(
+        `https://jhprohealth.herokuapp.com/polls/reminders/${this.state.userId}/${this.state.timetext}/${this.state.token}/`,
+      );
+
+      let responseJson = await response.json();
+      console.log(responseJson);
+      alert("Reminder is successfully set.");
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   sendDelayedNotificationV2 (title,body) {
@@ -108,7 +167,7 @@ export default class HomeScreen extends React.Component {
       channelId: 'reminders'
       },
       ios: {
-      sound: true,
+        sound: true,
       },
     }
     const schedulingOptions = {
@@ -121,15 +180,17 @@ export default class HomeScreen extends React.Component {
 
     }
 
-    ToastAndroid.show("time: " + (new Date(
-              this.state.datetext.split("/")[0], this.state.datetext.split("/")[1], this.state.datetext.split("/")[2],
-              this.state.timetext.split(":")[0], this.state.timetext.split(":")[1], 0, 0
-            )).getTime(), ToastAndroid.SHORT);
+    if(Platform.OS === 'android'){
+      ToastAndroid.show("time: " + (new Date(
+                this.state.datetext.split("/")[0], this.state.datetext.split("/")[1], this.state.datetext.split("/")[2],
+                this.state.timetext.split(":")[0], this.state.timetext.split(":")[1], 0, 0
+              )).getTime(), ToastAndroid.SHORT);
 
-    console.log("time: " + (new Date(
-              this.state.datetext.split("/")[0], this.state.datetext.split("/")[1], this.state.datetext.split("/")[2],
-              this.state.timetext.split(":")[0], this.state.timetext.split(":")[1], 0, 0
-            )).getTime());
+      console.log("time: " + (new Date(
+                this.state.datetext.split("/")[0], this.state.datetext.split("/")[1], this.state.datetext.split("/")[2],
+                this.state.timetext.split(":")[0], this.state.timetext.split(":")[1], 0, 0
+              )).getTime());
+    }
 
     console.log('Scheduling delayed notification:', { localNotification, schedulingOptions });
 
@@ -166,6 +227,7 @@ export default class HomeScreen extends React.Component {
     // Get the token that uniquely identifies this device
     let token = await Notifications.getExpoPushTokenAsync();
     console.log(token);
+    this.state.token = token;
 
     // POST the token to your backend server from where you can retrieve it to send push notifications.
     return fetch(PUSH_ENDPOINT, {
@@ -184,6 +246,12 @@ export default class HomeScreen extends React.Component {
       }),
     });
   }
+
+  writeToClipboard = async () => {
+    await Clipboard.setString(this.state.token);
+    alert('Copied to Clipboard!');
+    this.setState({ state: this.state });
+  };
 
   componentDidMount(){
     if (Platform.OS === 'android') {
@@ -214,20 +282,48 @@ export default class HomeScreen extends React.Component {
 }
 
   render() {
+
+
+
+
     return (
       <View style={styles.container}>
           <View style={{flex: 1, flexDirection: 'column', justifyContent: 'space-around', alignItems: 'stretch'}}>
 
-            <Text> Set reminder on date and time </Text>
-            <TouchableOpacity style={styles.myButton} onPress={() => this.openCalendar()}>
-                <Text style={styles.buttonText}>{this.state.datetext}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.myButton} onPress={() => this.openTimePicker()}>
-                <Text style={styles.buttonText}>{this.state.timetext}</Text>
-            </TouchableOpacity>
+            <Text style={styles.welcomeText}> Reminder </Text>
+            {/*<Text>{"Your token: " + this.state.token}</Text>*/}
 
-            <TouchableOpacity style={styles.myButton} onPress={() => this.submitDateTime()}>
-                <Text style={styles.buttonText}>Set rrrreminder</Text>
+            <View style={styles.myButton}>
+              <TextInput
+                style={styles.userIdTextBox}
+                keyboardType='numeric'
+                returnKeyType='done'
+                placeholder='Enter user ID'
+                underlineColorAndroid='rgba(0,0,0,0)'
+                onChangeText={(text) => this.setState({userId:text})}
+
+              />
+            </View>
+
+            <View style={styles.myButton}>
+            <DatePicker
+              style={styles.timePicker}
+              date={this.state.timetext}
+              mode="time"
+              format="HH:mm"
+              confirmBtnText="Confirm"
+              cancelBtnText="Cancel"
+              minuteInterval={10}
+              showIcon={false}
+              androidMode="spinner"
+              onDateChange={(time) => {this.setState({timetext: time});}}
+            />
+            </View>
+
+
+
+            <TouchableOpacity style={styles.myButton} onPress={() => this.submitTimeAsync()}>
+                <Text style={styles.buttonText}>Setup reminder</Text>
             </TouchableOpacity>
 
           </View>
@@ -238,6 +334,14 @@ export default class HomeScreen extends React.Component {
       </View>
     );
   }
+}
+
+function hife(){
+  return(
+
+    <Text style={styles.welcomeText}> Reminder </Text>
+
+  )
 }
 
 const styles = StyleSheet.create({
@@ -327,11 +431,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2e78b7',
   },
+  welcomeText: {
+    color: '#5472d3',
+    fontWeight: 'bold',
+    fontSize: 40,
+    textAlign: 'center',
+  },
+
+
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 30,
 
+  },
+
+  userIdTextBox: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 30,
+    width:300,
+    textAlign: 'center',
   },
 
   myButton: {
@@ -357,7 +477,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
-  }
+  },
+  timePicker: {
+    width: 350,
+
+    shadowColor: 'rgba(0,0,0, .4)', // IOS
+    shadowOffset: { height: 0, width: 0 }, // IOS
+    shadowOpacity: 0, // IOS
+    shadowRadius: 0, //IOS
+    backgroundColor: '#5472d3',
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
+
+  },
 
 
 
