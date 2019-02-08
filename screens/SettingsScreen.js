@@ -1,10 +1,15 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
 import { ExpoConfigView } from '@expo/samples';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  Text,
+} from 'react-native';
 
 export default class SettingsScreen extends React.Component {
   static navigationOptions = {
-    title: 'Settings',
+    title: 'About',
   };
 
   render() {
@@ -12,13 +17,23 @@ export default class SettingsScreen extends React.Component {
      * content, we just wanted to give you a quick view of your config */
     return (
 
-      <ScrollView style={styles.container}>
-        {/* Go ahead and delete ExpoLinksView and replace it with your
-           * content, we just wanted to provide you with some helpful links
-        <ExpoConfigView />
-        */}
+      <View style={{
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'white',
+      }}>
+          <Text style={{
+            textAlign: 'center',
+            fontSize: 25,
+          }}>
 
-      </ScrollView>
+              Created by the Johns Hopkins inHealth Measurement Corps.
+              Please direct any inquiries to akim77@jh.edu.
+
+          </Text>
+      </View>
       );
   }
 }
